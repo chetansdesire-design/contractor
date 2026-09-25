@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Casa - Quotation & Management System</title>
+    <!-- html2pdf Library for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a1a1a;
+            --accent-color: #c5a059;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-color: #2d3748;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); line-height: 1.5; padding-bottom: 40px; }
+
+        /* Login Screen Overlay */
+        .overlay-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .login-card {
+            background: var(--card-bg); padding: 2.5rem; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 90%; max-width: 380px; text-align: center;
+        }
+        .login-card h2 { margin-bottom: 0.5rem; color: var(--primary-color); font-size: 1.5rem; }
+        .login-card p { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .form-control { width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; }
+        .btn-primary {
+            width: 100%; padding: 0.75rem; background-color: var(--primary-color);
+            color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--accent-color); }
+        .error-msg { color: #e53e3e; font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+
+        /* Navigation Bar */
+        .navbar {
+            background-color: var(--primary-color); color: #fff;
+            padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;
+        }
+        .brand-logo { font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-color); }
+        .nav-actions { display: flex; align-items: center; gap: 1rem; }
+        .icon-btn { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Main Container */
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: var(--card-bg); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+        .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.3rem; display: inline-block; }
+
+        /* Input Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        /* Item Table */
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #f1f5f9; font-size: 0.85rem; text-transform: uppercase; }
+
+        /* Gallery / Spec Upload */
+        .gallery-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .gallery-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); }
+        
+        /* Summary Box for PDF Export */
+        #quotation-summary { background: #fff; padding: 2rem; border-radius: 4px; color: #000; }
+        .summary-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 1rem; margin-bottom: 1rem; }
+        .summary-totals { margin-top: 1rem; margin-left: auto; width: 280px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px dashed #e2e8f0; }
+        .summary-row.grand-total { border-bottom: 2px solid #000; font-weight: 700; font-size: 1.1rem; }
+
+        /* Modal */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .modal-content { background: #fff; padding: 1.5rem; border-radius: 8px; width: 90%; max-width: 350px; }
+
+        /* PDF Layout Optimization (Prevents blank pages) */
+        @media print {
+            body * { visibility: hidden; }
+            #quotation-summary, #quotation-summary * { visibility: visible; }
+            #quotation-summary { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+        .page-break-prevent { page-break-inside: avoid; break-inside: avoid; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="login-screen" class="overlay-screen">
+        <div class="login-card">
+            <h2>URBAN CASA</h2>
+            <p>Sales & Quotation System</p>
+            <input type="text" id="username" class="form-control" placeholder="Username" value="Admin">
+            <input type="password" id="password" class="form-control" placeholder="Password">
+            <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+            <div id="login-error" class="error-msg">Invalid credentials. Try again.</div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APPLICATION -->
+    <div id="main-app" style="display: none;">
+        
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="brand-logo">URBAN CASA</div>
+            <div class="nav-actions">
+                <button class="icon-btn" onclick="openSettingsModal()">⚙️ Settings</button>
+                <button class="icon-btn" onclick="handleLogout()">🚪 Logout</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- Client Details Entry -->
+            <div class="card">
+                <div class="section-title">Client & Quotation Details</div>
+                <div class="grid-2">
+                    <div>
+                        <label>Customer Name</label>
+                        <input type="text" id="client-name" class="form-control" placeholder="e.g. Rajesh Kumar" oninput="updateSummary()">
+                    </div>
+                    <div>
+                        <label>Phone Number</label>
+                        <input type="text" id="client-phone" class="form-control" placeholder="e.g. +91 9876543210" oninput="updateSummary()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Furniture Specifications / Items -->
+            <div class="card">
+                <div class="section-title">Furniture & Items List</div>
+                <table id="items-table">
+                    <thead>
+                        <tr>
+                            <th>Item & Description</th>
+                            <th width="80">Qty</th>
+                            <th width="120">Rate (₹)</th>
+                            <th width="120">Total (₹)</th>
+                            <th width="50"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-body">
+                        <!-- Dynamic rows inserted here -->
+                    </tbody>
+                </table>
+                <button class="btn-primary" style="width: auto; padding: 0.5rem 1rem;" onclick="addItemRow()">+ Add Furniture Item</button>
+            </div>
+
+            <!-- Tax & Gallery Option -->
+            <div class="card">
+                <div class="grid-2">
+                    <div>
+                        <div class="section-title">GST Selection</div>
+                        <select id="gst-rate" class="form-control" onchange="updateSummary()">
+                            <option value="18">18% GST (Standard Furniture)</option>
+                            <option value="12">12% GST</option>
+                            <option value="5">5% GST</option>
+                            <option value="0">0% (Exempted)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="section-title">Material / Spec Gallery</div>
+                        <input type="file" id="gallery-upload" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+                        <button class="btn-primary" style="background:#4a5568;" onclick="document.getElementById('gallery-upload').click()">🖼️ Upload Photos</button>
+                        <div class="gallery-container" id="gallery-preview"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUOTATION SUMMARY / INDEX PAGE (TARGET FOR PDF EXPORT) -->
+            <div class="card">
+                <div class="section-title">Quotation Summary Preview</div>
+                
+                <div id="quotation-summary" class="page-break-prevent">
+                    <div class="summary-header">
+                        <div>
+                            <h2 style="color: var(--accent-color); font-size: 1.5rem;">URBAN CASA</h2>
+                            <p style="font-size: 0.85rem; color: #555;">Elite Furniture & Interior Solutions</p>
+                        </div>
+                        <div style="text-align: right; font-size: 0.85rem;">
+                            <p><strong>Date:</strong> <span id="summary-date"></span></p>
+                            <p><strong>Quote No:</strong> UC-<span id="summary-quote-id"></span></p>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem; font-size: 0.9rem;">
+                        <p><strong>Client Name:</strong> <span id="sum-client-name">----------------</span></p>
+                        <p><strong>Contact:</strong> <span id="sum-client-phone">----------------</span></p>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item Description</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Rate (₹)</th>
+                                <th style="text-align: right;">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sum-items-body">
+                            <!-- Items auto-populate here -->
+                        </tbody>
+                    </table>
+
+                    <div class="summary-totals">
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span>₹<span id="sum-subtotal">0.00</span></span>
+                        </div>
+                        <div class="summary-row">
+                            <span>GST (<span id="sum-gst-percent">18</span>%):</span>
+                            <span>₹<span id="sum-gst-amount">0.00</span></span>
+                        </div>
+                        <div class="summary-row grand-total">
+                            <span>Grand Total:</span>
+                            <span>₹<span id="sum-grand-total">0.00</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Gallery render in PDF -->
+                    <div id="sum-gallery-container" style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                </div>
+
+                <div style="margin-top: 1.5rem; text-align: right;">
+                    <button class="btn-primary" style="width: auto; background: var(--accent-color); padding: 0.75rem 2rem;" onclick="exportToPDF()">📄 Export PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. SETTINGS MODAL -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1rem;">Change Admin Password</h3>
+            <input type="password" id="old-pwd" class="form-control" placeholder="Current Password">
+            <input type="password" id="new-pwd" class="form-control" placeholder="New Password">
+            <button class="btn-primary" onclick="saveNewPassword()">Save Changes</button>
+            <button class="btn-primary" style="background:#cbd5e1; color:#000; margin-top: 0.5rem;" onclick="closeSettingsModal()">Cancel</button>
+            <p id="settings-msg" style="font-size: 0.85rem; margin-top: 0.5rem; text-align: center;"></p>
+        </div>
+    </div>
+
+    <!-- 4. JAVASCRIPT LOGIC -->
+    <script>
+        // Default Admin Setup
+        if (!localStorage.getItem('adminPassword')) {
+            localStorage.setItem('adminPassword', '1996');
+        }
+
+        document.getElementById('summary-date').innerText = new Date().toLocaleDateString('en-IN');
+        document.getElementById('summary-quote-id').innerText = Math.floor(1000 + Math.random() * 9000);
+
+        // --- AUTHENTICATION ---
+        function handleLogin() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const savedPass = localStorage.getItem('adminPassword');
+
+            if (user === 'Admin' && pass === savedPass) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                if(document.querySelectorAll('#items-body tr').length === 0) {
+                    addItemRow(); // Initialize with one default item row
+                }
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function handleLogout() {
+            document.getElementById('password').value = '';
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+
+        // --- SETTINGS MODAL ---
+        function openSettingsModal() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('settings-msg').innerText = '';
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('old-pwd').value = '';
+            document.getElementById('new-pwd').value = '';
+        }
+
+        function saveNewPassword() {
+            const oldPwd = document.getElementById('old-pwd').value;
+            const newPwd = document.getElementById('new-pwd').value;
+            const savedPass = localStorage.getItem('adminPassword');
+            const msg = document.getElementById('settings-msg');
+
+            if (oldPwd !== savedPass) {
+                msg.style.color = 'red';
+                msg.innerText = 'Current password incorrect.';
+                return;
+            }
+            if (newPwd.length < 4) {
+                msg.style.color = 'red';
+                msg.innerText = 'Password must be at least 4 characters.';
+                return;
+            }
+
+            localStorage.setItem('adminPassword', newPwd);
+            msg.style.color = 'green';
+            msg.innerText = 'Password updated successfully!';
+            setTimeout(closeSettingsModal, 1200);
+        }
+
+        // --- DYNAMIC ITEMS & CALCULATIONS ---
+        function addItemRow() {
+            const tbody = document.getElementById('items-body');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="form-control item-desc" placeholder="e.g. Executive Wooden Desk" oninput="updateSummary()" style="margin:0;"></td>
+                <td><input type="number" class="form-control item-qty" value="1" min="1" oninput="updateSummary()" style="margin:0;"></td>
+                <td><input type="number" class="form-control item-rate" value="0" min="0" oninput="updateSummary()" style="margin:0;"></td>
+                <td class="item-amount" style="font-weight:600;">0.00</td>
+                <td><button onclick="removeRow(this)" style="background:none; border:none; color:red; cursor:pointer;">✖</button></td>
+            `;
+            tbody.appendChild(row);
+            updateSummary();
+        }
+
+        function removeRow(btn) {
+            btn.closest('tr').remove();
+            updateSummary();
+        }
+
+        function updateSummary() {
+            // Client info
+            document.getElementById('sum-client-name').innerText = document.getElementById('client-name').value || '----------------';
+            document.getElementById('sum-client-phone').innerText = document.getElementById('client-phone').value || '----------------';
+
+            // Items calculation
+            const rows = document.querySelectorAll('#items-body tr');
+            const sumTbody = document.getElementById('sum-items-body');
+            sumTbody.innerHTML = '';
+            
+            let subtotal = 0;
+
+            rows.forEach(row => {
+                const desc = row.querySelector('.item-desc').value || 'Custom Item';
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                const amount = qty * rate;
+                
+                row.querySelector('.item-amount').innerText = amount.toFixed(2);
+                subtotal += amount;
+
+                if(amount > 0 || desc !== 'Custom Item') {
+                    const sumRow = document.createElement('tr');
+                    sumRow.innerHTML = `
+                        <td>${desc}</td>
+                        <td style="text-align: center;">${qty}</td>
+                        <td style="text-align: right;">₹${rate.toFixed(2)}</td>
+                        <td style="text-align: right;">₹${amount.toFixed(2)}</td>
+                    `;
+                    sumTbody.appendChild(sumRow);
+                }
+            });
+
+            // Taxes
+            const gstRate = parseFloat(document.getElementById('gst-rate').value) || 0;
+            const gstAmount = (subtotal * gstRate) / 100;
+            const grandTotal = subtotal + gstAmount;
+
+            document.getElementById('sum-subtotal').innerText = subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('sum-gst-percent').innerText = gstRate;
+            document.getElementById('sum-gst-amount').innerText = gstAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('sum-grand-total').innerText = grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+
+        // --- GALLERY IMAGE HANDLING ---
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            const previewContainer = document.getElementById('gallery-preview');
+            const sumGalleryContainer = document.getElementById('sum-gallery-container');
+
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'gallery-thumb';
+                    previewContainer.appendChild(img);
+
+                    const sumImg = img.cloneNode();
+                    sumImg.style.width = '60px';
+                    sumImg.style.height = '60px';
+                    sumGalleryContainer.appendChild(sumImg);
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- PDF EXPORT FIX (No Blank Page Issue) ---
+        function exportToPDF() {
+            const element = document.getElementById('quotation-summary');
+            
+            // Configuration optimized to eliminate whitespace / extra blank page glitches
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3], // Compact margins
+                filename:     `Quotation_UrbanCasa_${Date.now()}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    scrollY: 0, // Critical: capture starts from top without offset scroll
+                    windowWidth: document.documentElement.offsetWidth 
+                },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>
