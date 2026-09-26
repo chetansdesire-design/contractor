@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>URBAN CASA - Contractor Payment Portal</title>
+    <title>URBAN CASA - Contractor Portal</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e293b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/1e293b/ffffff?text=UC">
+    <link rel="manifest" href="manifest.json">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK (v8 for RTDB compatibility) -->
+    
+    <!-- Firebase SDK (v8) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <!-- html2pdf for PDF generation -->
+    
+    <!-- html2pdf & FontAwesome -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
@@ -30,177 +38,109 @@
     </script>
     
     <style>
-        body {
-            background-color: #f8fafc;
-            color: #0f172a;
-            -webkit-tap-highlight-color: transparent;
-            padding-bottom: 80px; 
-        }
-
-        .saas-card {
-            background: #ffffff;
-            border-radius: 1.25rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-        }
-
-        .saas-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border-color: #cbd5e1;
-        }
-
-        .saas-input {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            color: #0f172a;
-            border-radius: 0.75rem;
-            padding: 0.875rem 1rem;
-            width: 100%;
-            transition: all 0.2s;
-            font-size: 0.875rem;
-        }
-
-        .saas-input:focus {
-            outline: none;
-            border-color: #0d9488;
-            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
-            background: #ffffff;
-        }
-
+        body { background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; padding-bottom: 80px; }
+        .saas-card { background: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: all 0.2s ease-in-out; cursor: pointer; }
+        .saas-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #cbd5e1; }
+        .saas-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 0.75rem; padding: 0.875rem 1rem; width: 100%; transition: all 0.2s; font-size: 0.875rem; }
+        .saas-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.15); background: #ffffff; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @media (min-width: 768px) {
-            body { padding-bottom: 0; padding-left: 280px; }
-            .bottom-nav { display: none; }
-            .side-nav { display: flex; }
-            .header-mobile { display: none; }
-        }
-        @media (max-width: 767px) {
-            .side-nav { display: none; }
-            .bottom-nav { display: flex; }
-        }
-
+        @media (min-width: 768px) { body { padding-bottom: 0; padding-left: 280px; } .bottom-nav { display: none; } .side-nav { display: flex; } .header-mobile { display: none; } }
+        @media (max-width: 767px) { .side-nav { display: none; } .bottom-nav { display: flex; } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Hidden PDF container - toggled dynamically to avoid extra canvas height blank pages */
-        #pdf-export-container {
-            display: none;
-            width: 750px;
-            background: white;
-            padding: 35px;
-            color: black;
-            box-sizing: border-box;
-        }
+        #pdf-export-container { display: none; width: 750px; background: white; padding: 35px; color: black; box-sizing: border-box; }
     </style>
 </head>
 <body class="antialiased">
 
-    <!-- LOGIN SCREEN OVERLAY -->
+    <!-- LOGIN SCREEN -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl border border-slate-100 animate-fade-in">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-slate-900 rounded-2xl text-white flex items-center justify-center text-3xl shadow-lg mx-auto mb-4">
-                    <i class="fa-solid fa-city"></i>
-                </div>
+                <div class="w-16 h-16 bg-slate-900 rounded-2xl text-white flex items-center justify-center text-3xl shadow-lg mx-auto mb-4"><i class="fa-solid fa-city"></i></div>
                 <h2 class="text-2xl font-black text-slate-900">URBAN CASA</h2>
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Contractor Payment Portal</p>
             </div>
-
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">User Name</label>
-                    <input type="text" id="loginUsername" required placeholder="Enter username" class="saas-input">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Portal Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter password to access" class="saas-input">
                 </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Password</label>
-                    <input type="password" id="loginPassword" required placeholder="Enter password" class="saas-input">
-                </div>
-                <p id="loginError" class="text-xs text-rose-500 font-bold hidden text-center">Invalid Username or Password</p>
+                <p id="loginError" class="text-xs text-rose-500 font-bold hidden text-center">Invalid Password</p>
                 <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-md w-full">Sign In</button>
             </form>
         </div>
     </div>
 
-    <!-- APP CONTENT (Hidden until logged in) -->
+    <!-- APP CONTENT -->
     <div id="app-content" class="hidden">
         
-        <!-- Desktop Side Navigation -->
+        <!-- Desktop Sidebar -->
         <nav class="side-nav fixed top-0 left-0 h-full w-[280px] bg-white border-r border-slate-200 flex-col py-8 px-5 z-40 shadow-sm hidden md:flex justify-between">
             <div>
                 <div class="mb-10 text-center">
-                    <div class="w-14 h-14 bg-slate-900 rounded-2xl text-white flex items-center justify-center text-2xl shadow-lg mx-auto mb-3">
-                        <i class="fa-solid fa-city"></i>
-                    </div>
+                    <div class="w-14 h-14 bg-slate-900 rounded-2xl text-white flex items-center justify-center text-2xl shadow-lg mx-auto mb-3"><i class="fa-solid fa-city"></i></div>
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">URBAN CASA</h1>
                     <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold mt-1">Contractor Payments</p>
                 </div>
                 <div class="flex flex-col gap-2">
-                    <button onclick="switchTab('projects')" id="nav-desktop-projects" class="w-full text-left px-5 py-3.5 rounded-xl transition flex items-center gap-3 font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600">
-                        <i class="fas fa-hammer w-5 text-center"></i> Active Projects
-                    </button>
-                    <button onclick="switchTab('contractors')" id="nav-desktop-contractors" class="w-full text-left px-5 py-3.5 rounded-xl transition flex items-center gap-3 font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600">
-                        <i class="fas fa-users w-5 text-center"></i> Directory
-                    </button>
+                    <button onclick="switchTab('projects')" id="nav-desktop-projects" class="w-full text-left px-5 py-3.5 rounded-xl transition flex items-center gap-3 font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600"><i class="fas fa-hammer w-5 text-center"></i> Active Projects</button>
+                    <button onclick="switchTab('contractors')" id="nav-desktop-contractors" class="w-full text-left px-5 py-3.5 rounded-xl transition flex items-center gap-3 font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600"><i class="fas fa-users w-5 text-center"></i> Directory</button>
                 </div>
             </div>
-
-            <!-- Settings & Logout -->
             <div class="border-t border-slate-100 pt-4 flex flex-col gap-2">
-                <button onclick="openModal('settingsModal')" class="w-full text-left px-5 py-3 rounded-xl transition flex items-center gap-3 font-semibold text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-cog w-5 text-center text-slate-400"></i> Settings
-                </button>
-                <button onclick="handleLogout()" class="w-full text-left px-5 py-3 rounded-xl transition flex items-center gap-3 font-semibold text-rose-600 hover:bg-rose-50">
-                    <i class="fas fa-sign-out-alt w-5 text-center"></i> Logout
-                </button>
+                <button onclick="openSettingsModal()" class="w-full text-left px-5 py-3 rounded-xl transition flex items-center gap-3 font-semibold text-slate-600 hover:bg-slate-50"><i class="fas fa-cog w-5 text-center text-slate-400"></i> Settings</button>
+                <button onclick="handleLogout()" class="w-full text-left px-5 py-3 rounded-xl transition flex items-center gap-3 font-semibold text-rose-600 hover:bg-rose-50"><i class="fas fa-sign-out-alt w-5 text-center"></i> Logout</button>
             </div>
         </nav>
 
         <!-- Mobile Header -->
         <header class="header-mobile bg-white sticky top-0 z-30 px-4 py-4 mb-4 border-b border-slate-200 shadow-sm flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-slate-900 rounded-lg text-white flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-city"></i>
-                </div>
+                <div class="w-8 h-8 bg-slate-900 rounded-lg text-white flex items-center justify-center text-sm"><i class="fa-solid fa-city"></i></div>
                 <h1 class="text-base font-black text-slate-900">URBAN CASA</h1>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="openModal('settingsModal')" class="w-9 h-9 bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center"><i class="fas fa-cog"></i></button>
+                <button onclick="openSettingsModal()" class="w-9 h-9 bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center"><i class="fas fa-cog"></i></button>
                 <button onclick="handleLogout()" class="w-9 h-9 bg-rose-50 rounded-lg text-rose-600 flex items-center justify-center"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </header>
 
-        <!-- Main Content Area -->
         <main class="container mx-auto px-4 md:px-8 max-w-7xl pt-2 md:pt-8 pb-10">
             
             <!-- Active Projects View -->
             <section id="projects-view" class="view-section block animate-fade-in">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
                         <h2 class="text-2xl font-black text-slate-900">Active Work</h2>
                         <p class="text-sm text-slate-500 font-medium mt-1">Projects with pending labour balances.</p>
                     </div>
-                    <button onclick="openModal('projectModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 font-bold w-full sm:w-auto">
-                        <i class="fas fa-plus"></i> New Project
-                    </button>
+                    <button onclick="openProjectModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 font-bold w-full sm:w-auto"><i class="fas fa-plus"></i> New Project</button>
+                </div>
+                <div class="mb-6">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchProjects" onkeyup="filterProjects()" placeholder="Search by customer or contractor..." class="saas-input pl-11">
+                    </div>
                 </div>
                 <div id="projects-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
             </section>
 
             <!-- Contractors Directory View -->
             <section id="contractors-view" class="view-section hidden animate-fade-in">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
                         <h2 class="text-2xl font-black text-slate-900">Contractor Directory</h2>
                         <p class="text-sm text-slate-500 font-medium mt-1">Manage contractors and track payment histories.</p>
                     </div>
-                    <button onclick="openModal('contractorModal')" class="bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 px-6 py-3 rounded-xl shadow-sm transition flex items-center justify-center gap-2 font-bold w-full sm:w-auto">
-                        <i class="fas fa-user-plus text-brand-600"></i> Add Contractor
-                    </button>
+                    <button onclick="openContractorModal()" class="bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 px-6 py-3 rounded-xl shadow-sm transition flex items-center justify-center gap-2 font-bold w-full sm:w-auto"><i class="fas fa-user-plus text-brand-600"></i> Add Contractor</button>
+                </div>
+                <div class="mb-6">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchContractors" onkeyup="filterContractors()" placeholder="Search contractors by name or phone..." class="saas-input pl-11">
+                    </div>
                 </div>
                 <div id="contractors-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
             </section>
@@ -208,27 +148,22 @@
             <!-- Contractor Profile & Project List -->
             <section id="contractor-projects-view" class="view-section hidden animate-fade-in">
                 <div class="mb-6 flex items-center gap-4">
-                    <button onclick="switchTab('contractors')" class="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm transition">
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
+                    <button onclick="switchTab('contractors')" class="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm transition shrink-0"><i class="fas fa-arrow-left"></i></button>
                     <div>
                         <h2 class="text-2xl font-black text-slate-900" id="cp-name">Contractor Name</h2>
                         <p class="text-sm text-slate-500 font-medium mt-0.5">Assigned Labour Projects</p>
                     </div>
                 </div>
-                <!-- Stats Banner -->
-                <div class="bg-white border border-slate-200 rounded-2xl p-5 mb-8 flex gap-6 shadow-sm overflow-x-auto no-scrollbar">
-                    <div class="shrink-0">
-                        <p class="text-[11px] uppercase font-bold text-slate-400 mb-1">Total Labour</p>
-                        <p class="text-xl font-black text-slate-800" id="cp-total-labour">₹0</p>
-                    </div>
-                    <div class="shrink-0">
-                        <p class="text-[11px] uppercase font-bold text-slate-400 mb-1">Total Settled</p>
-                        <p class="text-xl font-black text-brand-600" id="cp-total-paid">₹0</p>
-                    </div>
-                    <div class="shrink-0">
-                        <p class="text-[11px] uppercase font-bold text-slate-400 mb-1">Projects</p>
-                        <p class="text-xl font-black text-slate-800" id="cp-total-projects">0</p>
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 mb-6 flex gap-6 shadow-sm overflow-x-auto no-scrollbar">
+                    <div class="shrink-0"><p class="text-[11px] uppercase font-bold text-slate-400 mb-1">Total Labour</p><p class="text-xl font-black text-slate-800" id="cp-total-labour">₹0</p></div>
+                    <div class="shrink-0"><p class="text-[11px] uppercase font-bold text-slate-400 mb-1">Total Settled</p><p class="text-xl font-black text-brand-600" id="cp-total-paid">₹0</p></div>
+                    <div class="shrink-0"><p class="text-[11px] uppercase font-bold text-slate-400 mb-1">Projects</p><p class="text-xl font-black text-slate-800" id="cp-total-projects">0</p></div>
+                </div>
+                <!-- Contractor specific Search Bar -->
+                <div class="mb-6">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchContractorProjects" onkeyup="filterContractorProjects()" placeholder="Search projects by site or date..." class="saas-input pl-11">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="cp-projects-list"></div>
@@ -238,84 +173,52 @@
             <section id="project-detail-view" class="view-section hidden animate-fade-in">
                 <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <button onclick="goBackToContractor()" class="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm transition shrink-0">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
+                        <button onclick="goBackToContractor()" class="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm transition shrink-0"><i class="fas fa-arrow-left"></i></button>
                         <div>
                             <h2 class="text-2xl font-black text-slate-900" id="pd-customer">Customer Name</h2>
                             <p class="text-sm text-slate-500 font-medium mt-0.5" id="pd-contractor-name">Contractor</p>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="shareLedgerWhatsApp()" class="bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 flex-1 md:flex-none">
-                            <i class="fab fa-whatsapp text-lg"></i> Send
-                        </button>
-                        <button onclick="exportLedgerPDF()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 flex-1 md:flex-none">
-                            <i class="fas fa-file-pdf"></i> PDF
-                        </button>
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                        <button onclick="shareLedgerWhatsApp()" class="bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 flex-1 md:flex-none"><i class="fab fa-whatsapp text-lg"></i> <span class="hidden md:inline">Send</span></button>
+                        <button onclick="exportLedgerPDF()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 flex-1 md:flex-none"><i class="fas fa-file-pdf"></i> <span class="hidden md:inline">PDF</span></button>
+                        <button onclick="openEditProject(currentProjectId)" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2.5 rounded-xl font-bold shadow-sm transition flex items-center justify-center gap-2"><i class="fas fa-edit"></i></button>
+                        <button id="pd-delete-btn" onclick="deleteProject(currentProjectId)" class="bg-rose-50 border border-rose-100 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl font-bold shadow-sm transition flex items-center justify-center gap-2 hidden"><i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">Delete</span></button>
                     </div>
                 </div>
 
-                <!-- Project Financials -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Area</p>
-                        <p class="font-black text-slate-800 text-lg mt-1" id="pd-area">0 sq in</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Labour Value</p>
-                        <p class="font-black text-slate-800 text-lg mt-1" id="pd-value">₹0</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Settled</p>
-                        <p class="font-black text-brand-600 text-lg mt-1" id="pd-paid">₹0</p>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Pending Balance</p>
-                        <p class="font-black text-rose-500 text-lg mt-1" id="pd-balance">₹0</p>
-                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Area</p><p class="font-black text-slate-800 text-lg mt-1" id="pd-area">0 sq in</p></div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Labour Value</p><p class="font-black text-slate-800 text-lg mt-1" id="pd-value">₹0</p></div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Settled</p><p class="font-black text-brand-600 text-lg mt-1" id="pd-paid">₹0</p></div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><p class="text-[10px] text-slate-500 uppercase font-bold tracking-wide">Pending Balance</p><p class="font-black text-rose-500 text-lg mt-1" id="pd-balance">₹0</p></div>
                 </div>
 
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-receipt text-brand-500"></i> Payment Ledger</h3>
-                    <button onclick="openPaymentModalForCurrentProject()" class="text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition">
-                        + Add Payment
-                    </button>
+                    <button onclick="openPaymentModal()" class="text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition">+ Add Payment</button>
                 </div>
                 
                 <div id="pd-payments-list" class="space-y-4"></div>
             </section>
-
         </main>
 
-        <!-- Mobile Bottom Navigation -->
+        <!-- Mobile Bottom Nav -->
         <nav class="bottom-nav bg-white border-t border-slate-200 fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-2 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <button onclick="switchTab('projects')" id="nav-mobile-projects" class="flex flex-col items-center justify-center w-1/2 h-full text-brand-600">
-                <i class="fas fa-hammer text-[20px] mb-1"></i>
-                <span class="text-[10px] font-bold">Projects</span>
-            </button>
-            <button onclick="switchTab('contractors')" id="nav-mobile-contractors" class="flex flex-col items-center justify-center w-1/2 h-full text-slate-400">
-                <i class="fas fa-users text-[20px] mb-1"></i>
-                <span class="text-[10px] font-bold">Directory</span>
-            </button>
+            <button onclick="switchTab('projects')" id="nav-mobile-projects" class="flex flex-col items-center justify-center w-1/2 h-full text-brand-600"><i class="fas fa-hammer text-[20px] mb-1"></i><span class="text-[10px] font-bold">Projects</span></button>
+            <button onclick="switchTab('contractors')" id="nav-mobile-contractors" class="flex flex-col items-center justify-center w-1/2 h-full text-slate-400"><i class="fas fa-users text-[20px] mb-1"></i><span class="text-[10px] font-bold">Directory</span></button>
         </nav>
     </div>
 
-    <!-- Clean Container for PDF Export (Avoids Blank Page Canvas Issue) -->
+    <!-- Hidden PDF Template -->
     <div id="pdf-export-container">
         <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #1e293b; padding-bottom: 15px;">
             <h1 style="font-size: 28px; font-weight: 900; margin: 0; color: #0f172a;">URBAN CASA</h1>
             <p style="font-size: 11px; text-transform: uppercase; tracking: 2px; color: #64748b; font-weight: 700; margin-top: 4px;">Contractor Payment Ledger</p>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
-            <div>
-                <p style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Customer / Site</p>
-                <p style="font-size: 16px; font-weight: 800; margin: 0;" id="pdf-customer">--</p>
-            </div>
-            <div style="text-align: right;">
-                <p style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Contractor</p>
-                <p style="font-size: 16px; font-weight: 800; margin: 0;" id="pdf-contractor">--</p>
-            </div>
+            <div><p style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Customer / Site</p><p style="font-size: 16px; font-weight: 800; margin: 0;" id="pdf-customer">--</p></div>
+            <div style="text-align: right;"><p style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">Contractor</p><p style="font-size: 16px; font-weight: 800; margin: 0;" id="pdf-contractor">--</p></div>
         </div>
         <div style="display: flex; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px; justify-content: space-between;">
             <div><p style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin:0;">Area</p><p style="font-size: 14px; font-weight: 800; margin: 4px 0 0 0;" id="pdf-area">--</p></div>
@@ -325,41 +228,23 @@
         </div>
         <h3 style="font-size: 14px; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; color: #0f172a;">Transaction History</h3>
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="font-size: 10px; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
-                    <th style="padding: 8px 0;">Date</th>
-                    <th style="padding: 8px 0;">Milestone</th>
-                    <th style="padding: 8px 0;">Mode</th>
-                    <th style="padding: 8px 0; text-align: right;">Amount</th>
-                </tr>
-            </thead>
+            <thead><tr style="font-size: 10px; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;"><th style="padding: 8px 0;">Date</th><th style="padding: 8px 0;">Mode</th><th style="padding: 8px 0;">Notes</th><th style="padding: 8px 0; text-align: right;">Amount</th></tr></thead>
             <tbody id="pdf-payments-tbody"></tbody>
         </table>
-        <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-            Generated on <span id="pdf-gen-date"></span> • Urban Casa Contractor Management
-        </div>
+        <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px;">Generated on <span id="pdf-gen-date"></span> • Urban Casa Contractor Management</div>
     </div>
 
-    <!-- Modals (Project, Contractor, Payment, Settings) -->
+    <!-- Modals Overlay -->
     <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden transition-opacity opacity-0" onclick="closeAllModals()"></div>
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4 pointer-events-none">
         <div class="bg-white w-full max-w-md rounded-t-[2rem] md:rounded-2xl p-6 md:p-8 pointer-events-auto transform translate-y-full md:translate-y-0 transition-transform duration-300 shadow-2xl">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden"></div>
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-black text-slate-900">Portal Settings</h3>
-                <button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-black text-slate-900">Security</h3><button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button></div>
             <form id="settingsForm" class="flex flex-col gap-4" onsubmit="handleChangePassword(event)">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Current Password</label>
-                    <input type="password" id="currPassword" required placeholder="Enter current password" class="saas-input">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">New Password</label>
-                    <input type="password" id="newPassword" required placeholder="Enter new password" class="saas-input">
-                </div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Current Password</label><input type="password" id="currPassword" required placeholder="Enter current password" class="saas-input"></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">New Password</label><input type="password" id="newPassword" required placeholder="Enter new password" class="saas-input"></div>
                 <p id="settingsMsg" class="text-xs font-bold text-center hidden"></p>
                 <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-md w-full">Update Password</button>
             </form>
@@ -370,23 +255,17 @@
     <div id="projectModal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4 pointer-events-none">
         <div class="bg-white w-full max-w-md rounded-t-[2rem] md:rounded-2xl p-6 md:p-8 pointer-events-auto transform translate-y-full md:translate-y-0 transition-transform duration-300 flex flex-col max-h-[90vh] shadow-2xl">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden"></div>
-            <div class="flex justify-between items-center mb-6 shrink-0">
-                <h3 class="text-2xl font-black text-slate-900">Log New Project</h3>
-                <button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-6 shrink-0"><h3 id="projModalTitle" class="text-2xl font-black text-slate-900">Log New Project</h3><button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button></div>
             <div class="overflow-y-auto no-scrollbar pb-2">
                 <form id="projectForm" class="flex flex-col gap-4" onsubmit="handleProjectSubmit(event)">
                     <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Date</label><input type="date" id="projDate" required class="saas-input font-medium"></div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Contractor</label>
-                        <select id="projContractor" required class="saas-input font-medium appearance-none"><option value="" disabled selected>Select from directory...</option></select>
-                    </div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Contractor</label><select id="projContractor" required class="saas-input font-medium appearance-none"><option value="" disabled selected>Select from directory...</option></select></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Customer / Site</label><input type="text" id="projCustomer" placeholder="e.g. Apt 402 - Sharma" required class="saas-input"></div>
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Area (Sq In)</label><input type="number" id="projArea" placeholder="0" required min="1" class="saas-input font-semibold"></div>
                         <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Labour Value (₹)</label><input type="number" id="projValue" placeholder="0" required min="1" class="saas-input font-bold text-brand-700 bg-brand-50 border-brand-100 focus:border-brand-500"></div>
                     </div>
-                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl mt-4 transition shadow-md w-full">Create Project</button>
+                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl mt-4 transition shadow-md w-full"><i class="fas fa-save"></i> Save Project</button>
                 </form>
             </div>
         </div>
@@ -396,11 +275,11 @@
     <div id="contractorModal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4 pointer-events-none">
         <div class="bg-white w-full max-w-md rounded-t-[2rem] md:rounded-2xl p-6 md:p-8 pointer-events-auto transform translate-y-full md:translate-y-0 transition-transform duration-300 shadow-2xl">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden"></div>
-            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-black text-slate-900">Add Contractor</h3><button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button></div>
+            <div class="flex justify-between items-center mb-6"><h3 id="contModalTitle" class="text-2xl font-black text-slate-900">Add Contractor</h3><button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button></div>
             <form id="contractorForm" class="flex flex-col gap-4" onsubmit="handleContractorSubmit(event)">
                 <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Entity Name</label><input type="text" id="contName" placeholder="Full Name" required class="saas-input"></div>
                 <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Phone Number</label><input type="text" id="contPhone" placeholder="+91..." class="saas-input"></div>
-                <button type="submit" class="bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-xl mt-4 transition shadow-md w-full">Register Contractor</button>
+                <button type="submit" class="bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-xl mt-4 transition shadow-md w-full"><i class="fas fa-save"></i> Save Contractor</button>
             </form>
         </div>
     </div>
@@ -409,7 +288,7 @@
     <div id="paymentModal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4 pointer-events-none">
         <div class="bg-white w-full max-w-md rounded-t-[2rem] md:rounded-2xl p-6 md:p-8 pointer-events-auto transform translate-y-full md:translate-y-0 transition-transform duration-300 flex flex-col max-h-[90vh] shadow-2xl">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden"></div>
-            <div class="flex justify-between items-center mb-6 shrink-0"><h3 class="text-2xl font-black text-slate-900">Record Payment</h3><button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button></div>
+            <div class="flex justify-between items-center mb-6 shrink-0"><h3 id="payModalTitle" class="text-2xl font-black text-slate-900">Record Payment</h3><button onclick="closeAllModals()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button></div>
             <div class="overflow-y-auto no-scrollbar pb-2">
                 <form id="paymentForm" class="flex flex-col gap-4" onsubmit="handlePaymentSubmit(event)">
                     <input type="hidden" id="payProjectId">
@@ -418,24 +297,9 @@
                         <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Amount (₹)</label><input type="number" id="payAmount" placeholder="0" required min="1" class="saas-input font-bold text-brand-700 bg-brand-50 border-brand-100 focus:border-brand-500"></div>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Milestone</label>
-                        <select id="payMilestone" required class="saas-input font-medium appearance-none">
-                            <option value="" disabled selected>Select Milestone...</option>
-                            <option value="10% Advance booking">10% Advance booking</option>
-                            <option value="50% on production start">50% on production start</option>
-                            <option value="30% on material arrival">30% on material arrival</option>
-                            <option value="10% on completition">10% on completition</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Payment Mode</label>
                         <select id="payMode" required class="saas-input font-medium appearance-none">
-                            <option value="" disabled selected>Select Mode...</option>
-                            <option value="Cash">Cash</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Bank Transfer">Bank Transfer (NEFT/RTGS)</option>
-                            <option value="Cheque">Cheque</option>
+                            <option value="" disabled selected>Select Mode...</option><option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Bank Transfer">Bank Transfer</option><option value="Cheque">Cheque</option>
                         </select>
                     </div>
                     <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Manual Notes</label><input type="text" id="payNotes" placeholder="Transaction ID, remarks..." class="saas-input"></div>
@@ -446,20 +310,29 @@
     </div>
 
     <script>
-        // Authentication State Management
+        // FIREBASE & STATE
+        const firebaseConfig = { databaseURL: "https://contractor-886ef-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.database();
+
+        let contractorsData = {}, projectsData = {}, paymentsData = {}, paidTotals = {}; 
+        let lastMainView = 'projects', currentContractorId = null, currentProjectId = null;
+        let editMode = { type: null, id: null };
+
+        // AUTHENTICATION
         const getAdminPassword = () => localStorage.getItem('uc_admin_password') || '1996';
-        
+
         function handleLogin(e) {
             e.preventDefault();
-            const user = document.getElementById('loginUsername').value;
             const pass = document.getElementById('loginPassword').value;
             const err = document.getElementById('loginError');
 
-            if (user === 'Admin' && pass === getAdminPassword()) {
+            if (pass === getAdminPassword()) {
                 sessionStorage.setItem('uc_logged_in', 'true');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-content').classList.remove('hidden');
                 err.classList.add('hidden');
+                initDataListeners();
             } else {
                 err.classList.remove('hidden');
             }
@@ -487,50 +360,50 @@
             localStorage.setItem('uc_admin_password', newP);
             msg.textContent = 'Password updated successfully!';
             msg.className = 'text-xs font-bold text-center text-emerald-600 block';
-            setTimeout(() => {
-                closeAllModals();
-                document.getElementById('settingsForm').reset();
-                msg.classList.add('hidden');
-            }, 1200);
+            setTimeout(() => { closeAllModals(); msg.classList.add('hidden'); document.getElementById('settingsForm').reset(); }, 1200);
         }
 
-        // Auto Login Check
         if (sessionStorage.getItem('uc_logged_in') === 'true') {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
+            initDataListeners();
         }
 
-        // Firebase Config
-        const firebaseConfig = { databaseURL: "https://contractor-886ef-default-rtdb.firebaseio.com/" };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.database();
+        // DATABASE LISTENER (Optimized for Speed)
+        function initDataListeners() {
+            db.ref('contractors').on('value', snap => { contractorsData = snap.val() || {}; updateDropdowns(); renderAll(); });
+            db.ref('projects').on('value', snap => { projectsData = snap.val() || {}; renderAll(); });
+            db.ref('payments').on('value', snap => { 
+                paymentsData = snap.val() || {}; 
+                // Pre-calculate all payment totals purely in memory (No DB writes!)
+                paidTotals = {};
+                Object.values(paymentsData).forEach(pay => {
+                    if(!pay.isDeleted) {
+                        paidTotals[pay.projectId] = (paidTotals[pay.projectId] || 0) + Number(pay.amount || 0);
+                    }
+                });
+                renderAll(); 
+            });
+        }
 
-        // App State
-        let contractorsData = {}, projectsData = {}, paymentsData = {}; 
-        let lastMainView = 'projects';
-        let currentContractorId = null;
-        let currentProjectId = null;
-
+        // UTILITIES
         const formatINR = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
         const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
         const setTodayStr = () => {
             const localISOTime = (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-            document.getElementById('projDate').value = localISOTime;
-            document.getElementById('payDate').value = localISOTime;
+            if(!editMode.id) { document.getElementById('projDate').value = localISOTime; document.getElementById('payDate').value = localISOTime; }
         };
 
-        setTodayStr();
-
-        // Listeners
-        db.ref('contractors').on('value', snap => { contractorsData = snap.val() || {}; updateDropdowns(); renderAll(); });
-        db.ref('projects').on('value', snap => { projectsData = snap.val() || {}; renderAll(); });
-        db.ref('payments').on('value', snap => { paymentsData = snap.val() || {}; renderAll(); });
-
+        // RENDERING PIPELINE
         function renderAll() {
             renderProjects();
             renderContractors();
             if (currentContractorId && !currentProjectId) buildContractorProjectsView(currentContractorId);
             if (currentProjectId) buildProjectDetailView(currentProjectId);
+            
+            filterProjects();
+            filterContractors();
+            filterContractorProjects();
         }
 
         function switchTab(tabId) {
@@ -542,15 +415,18 @@
                 lastMainView = tabId;
                 currentContractorId = null;
                 currentProjectId = null;
+                // Clear filters on tab switch
+                document.getElementById('searchProjects').value = '';
+                document.getElementById('searchContractors').value = '';
+                document.getElementById('searchContractorProjects').value = '';
+                filterProjects(); filterContractors(); filterContractorProjects();
             }
 
             ['projects', 'contractors'].forEach(t => {
                 const btnM = document.getElementById(`nav-mobile-${t}`);
                 const btnD = document.getElementById(`nav-desktop-${t}`);
                 if (!btnM || !btnD) return;
-                
                 const isActive = (t === tabId) || (tabId.includes('contractor') && t === 'contractors') || (tabId.includes('project-detail') && lastMainView === t);
-                
                 if(isActive) {
                     btnM.classList.add('text-brand-600'); btnM.classList.remove('text-slate-400');
                     btnD.classList.add('bg-brand-50', 'text-brand-700'); btnD.classList.remove('text-slate-600');
@@ -561,26 +437,44 @@
             });
         }
 
+        // FAST SEARCH FILTERS
+        function filterProjects() {
+            const query = (document.getElementById('searchProjects').value || '').toLowerCase();
+            document.querySelectorAll('.project-card').forEach(card => { card.style.display = card.innerText.toLowerCase().includes(query) ? '' : 'none'; });
+        }
+
+        function filterContractors() {
+            const query = (document.getElementById('searchContractors').value || '').toLowerCase();
+            document.querySelectorAll('.contractor-card').forEach(card => { card.style.display = card.innerText.toLowerCase().includes(query) ? '' : 'none'; });
+        }
+
+        function filterContractorProjects() {
+            const query = (document.getElementById('searchContractorProjects').value || '').toLowerCase();
+            document.querySelectorAll('.cp-project-card').forEach(card => { card.style.display = card.innerText.toLowerCase().includes(query) ? '' : 'none'; });
+        }
+
+        // FAST DOM RENDERING (String Buffering)
         function renderProjects() {
             const container = document.getElementById('projects-container');
-            container.innerHTML = '';
+            let html = '';
             let activeCount = 0;
             
             Object.keys(projectsData).sort((a,b) => new Date(projectsData[b].date||0) - new Date(projectsData[a].date||0)).forEach(key => {
                 const p = projectsData[key];
-                const balance = Number(p.value || 0) - Number(p.paid || 0);
+                if(p.isDeleted) return; 
+                
+                const balance = Number(p.value || 0) - (paidTotals[key] || 0);
                 if (balance <= 0) return; 
                 activeCount++;
-                const cName = contractorsData[p.contractorId] ? contractorsData[p.contractorId].name : 'Unknown Contractor';
+                const cName = contractorsData[p.contractorId] && !contractorsData[p.contractorId].isDeleted ? contractorsData[p.contractorId].name : 'Unknown Contractor';
                 
-                container.innerHTML += `
-                    <div class="saas-card p-5 flex flex-col h-full group" onclick="openProjectDetail('${key}')">
+                html += `
+                    <div class="saas-card p-5 flex flex-col h-full group project-card" onclick="openProjectDetail('${key}')">
                         <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1"><i class="far fa-calendar-alt"></i> ${formatDate(p.date)}</span>
-                                <h3 class="text-lg font-black text-slate-900 leading-tight group-hover:text-brand-600">${cName}</h3>
-                                <p class="text-sm text-slate-500 font-medium mt-1"><i class="fas fa-map-marker-alt text-slate-400 mr-1"></i> ${p.customer}</p>
-                            </div>
+                            <div><span class="text-[10px] font-bold text-slate-400 uppercase block mb-1"><i class="far fa-calendar-alt"></i> ${formatDate(p.date)}</span>
+                            <h3 class="text-lg font-black text-slate-900 leading-tight group-hover:text-brand-600">${cName}</h3>
+                            <p class="text-sm text-slate-500 font-medium mt-1"><i class="fas fa-map-marker-alt text-slate-400 mr-1"></i> ${p.customer}</p></div>
+                            <button onclick="event.stopPropagation(); openEditProject('${key}')" class="text-slate-300 hover:text-brand-600 p-2 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
                         </div>
                         <div class="mt-auto pt-4 border-t border-slate-100 flex justify-between items-end">
                             <div><p class="text-[10px] text-slate-500 uppercase font-bold">Labour</p><p class="font-bold text-slate-800">${formatINR(p.value)}</p></div>
@@ -588,81 +482,73 @@
                         </div>
                     </div>`;
             });
-            if(activeCount === 0) container.innerHTML = `<div class="col-span-full py-16 text-center bg-white border border-dashed border-slate-300 rounded-2xl"><h3 class="text-lg font-black text-slate-800">All Caught Up!</h3><p class="text-sm text-slate-500 mt-1">No pending project balances found.</p></div>`;
+            container.innerHTML = activeCount === 0 ? `<div class="col-span-full py-16 text-center bg-white border border-dashed border-slate-300 rounded-2xl"><h3 class="text-lg font-black text-slate-800">All Caught Up!</h3><p class="text-sm text-slate-500 mt-1">No pending project balances found.</p></div>` : html;
         }
 
         function renderContractors() {
             const container = document.getElementById('contractors-container');
-            container.innerHTML = '';
+            let html = '';
             
+            // Optimization: Pre-calculate per contractor stats to prevent O(N*M) looping
+            const stats = {};
+            Object.keys(projectsData).forEach(pid => {
+                const p = projectsData[pid];
+                if(!p.isDeleted) {
+                    if(!stats[p.contractorId]) stats[p.contractorId] = { totalL: 0, totalP: 0, active: 0 };
+                    stats[p.contractorId].totalL += Number(p.value || 0);
+                    stats[p.contractorId].totalP += (paidTotals[pid] || 0);
+                    if(Number(p.value || 0) - (paidTotals[pid] || 0) > 0) stats[p.contractorId].active++; 
+                }
+            });
+
             Object.keys(contractorsData).forEach(key => {
                 const c = contractorsData[key];
-                let totalL = 0, totalP = 0, active = 0;
-                Object.values(projectsData).forEach(p => {
-                    if(p.contractorId === key) { 
-                        totalL += Number(p.value || 0); 
-                        totalP += Number(p.paid || 0); 
-                        if(Number(p.value || 0) - Number(p.paid || 0) > 0) active++; 
-                    }
-                });
-
-                container.innerHTML += `
-                    <div class="saas-card p-6 flex flex-col group" onclick="openContractorProjects('${key}')">
+                if(c.isDeleted) return; 
+                
+                const s = stats[key] || { totalL: 0, totalP: 0, active: 0 };
+                
+                html += `
+                    <div class="saas-card p-6 flex flex-col group contractor-card" onclick="openContractorProjects('${key}')">
                         <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="font-black text-xl text-slate-900 group-hover:text-brand-600 transition-colors">${c.name}</h4>
-                                <p class="text-sm text-slate-500 font-medium mt-1"><i class="fas fa-phone-alt text-slate-400"></i> ${c.phone || 'N/A'}</p>
-                            </div>
-                            <span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase">${active} Active</span>
+                            <div><h4 class="font-black text-xl text-slate-900 group-hover:text-brand-600 transition-colors">${c.name}</h4><p class="text-sm text-slate-500 font-medium mt-1"><i class="fas fa-phone-alt text-slate-400"></i> ${c.phone || 'N/A'}</p></div>
+                            <div class="flex flex-col items-end gap-2"><span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase">${s.active} Active</span>
+                            <div class="flex gap-2"><button onclick="event.stopPropagation(); openEditContractor('${key}')" class="text-slate-300 hover:text-brand-600 p-1 transition"><i class="fas fa-edit"></i></button><button onclick="event.stopPropagation(); deleteContractor('${key}')" class="text-slate-300 hover:text-rose-500 p-1 transition"><i class="fas fa-trash-alt"></i></button></div></div>
                         </div>
                         <div class="mt-auto pt-4 border-t border-slate-100 grid grid-cols-2">
-                            <div><p class="text-[10px] text-slate-500 uppercase font-bold">Total Labour</p><p class="font-bold text-slate-800">${formatINR(totalL)}</p></div>
-                            <div class="text-right"><p class="text-[10px] text-slate-500 uppercase font-bold">Pending</p><p class="font-black ${totalL - totalP > 0 ? 'text-rose-500' : 'text-emerald-500'}">${formatINR(totalL - totalP)}</p></div>
+                            <div><p class="text-[10px] text-slate-500 uppercase font-bold">Total Labour</p><p class="font-bold text-slate-800">${formatINR(s.totalL)}</p></div>
+                            <div class="text-right"><p class="text-[10px] text-slate-500 uppercase font-bold">Pending</p><p class="font-black ${s.totalL - s.totalP > 0 ? 'text-rose-500' : 'text-emerald-500'}">${formatINR(s.totalL - s.totalP)}</p></div>
                         </div>
                     </div>`;
             });
-            if(Object.keys(contractorsData).length === 0) {
-                container.innerHTML = `<div class="col-span-full py-16 text-center bg-white border border-dashed border-slate-300 rounded-2xl"><h3 class="text-lg font-black text-slate-800">No Contractors Registered</h3></div>`;
-            }
+            container.innerHTML = html === '' ? `<div class="col-span-full py-16 text-center bg-white border border-dashed border-slate-300 rounded-2xl"><h3 class="text-lg font-black text-slate-800">No Contractors Registered</h3></div>` : html;
         }
 
-        function openContractorProjects(contractorId) {
-            currentContractorId = contractorId;
-            currentProjectId = null;
-            switchTab('contractor-projects');
-            buildContractorProjectsView(contractorId);
-        }
+        function openContractorProjects(contractorId) { currentContractorId = contractorId; currentProjectId = null; switchTab('contractor-projects'); buildContractorProjectsView(contractorId); }
 
         function buildContractorProjectsView(contractorId) {
             const c = contractorsData[contractorId];
-            if(!c) return;
+            if(!c || c.isDeleted) return;
             document.getElementById('cp-name').textContent = c.name;
             
             let totalL = 0, totalP = 0, totalCount = 0;
-            const container = document.getElementById('cp-projects-list');
-            container.innerHTML = '';
+            let html = '';
             
             Object.keys(projectsData).sort((a,b) => new Date(projectsData[b].date||0) - new Date(projectsData[a].date||0)).forEach(pid => {
                 const p = projectsData[pid];
-                if(p.contractorId === contractorId) {
+                if(p.contractorId === contractorId && !p.isDeleted) {
                     totalCount++;
                     const val = Number(p.value || 0);
-                    const pd = Number(p.paid || 0);
+                    const pd = paidTotals[pid] || 0;
                     const bal = val - pd;
                     totalL += val;
                     totalP += pd;
 
-                    container.innerHTML += `
-                        <div class="saas-card p-5 flex flex-col group" onclick="openProjectDetail('${pid}')">
+                    html += `
+                        <div class="saas-card p-5 flex flex-col group cp-project-card" onclick="openProjectDetail('${pid}')">
                             <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1"><i class="far fa-calendar-alt"></i> ${formatDate(p.date)}</span>
-                                    <h4 class="font-black text-lg text-slate-900 group-hover:text-brand-600">${p.customer}</h4>
-                                    <p class="text-xs text-slate-500 font-semibold mt-0.5">${p.area || 0} sq in</p>
-                                </div>
-                                <span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${bal <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
-                                    ${bal <= 0 ? 'Completed' : 'Pending'}
-                                </span>
+                                <div><span class="text-[10px] font-bold text-slate-400 uppercase block mb-1"><i class="far fa-calendar-alt"></i> ${formatDate(p.date)}</span>
+                                <h4 class="font-black text-lg text-slate-900 group-hover:text-brand-600">${p.customer}</h4><p class="text-xs text-slate-500 font-semibold mt-0.5">${p.area || 0} sq in</p></div>
+                                <span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${bal <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${bal <= 0 ? 'Completed' : 'Pending'}</span>
                             </div>
                             <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-end">
                                 <div><p class="text-[10px] text-slate-500 uppercase font-bold">Total</p><p class="font-bold text-slate-800">${formatINR(val)}</p></div>
@@ -675,269 +561,148 @@
             document.getElementById('cp-total-labour').textContent = formatINR(totalL);
             document.getElementById('cp-total-paid').textContent = formatINR(totalP);
             document.getElementById('cp-total-projects').textContent = totalCount;
-
-            if(totalCount === 0) {
-                container.innerHTML = `<div class="col-span-full py-12 text-center bg-white border border-dashed border-slate-300 rounded-2xl"><p class="text-slate-500 font-semibold">No projects assigned to this contractor.</p></div>`;
-            }
+            document.getElementById('cp-projects-list').innerHTML = totalCount === 0 ? `<div class="col-span-full py-12 text-center bg-white border border-dashed border-slate-300 rounded-2xl"><p class="text-slate-500 font-semibold">No projects assigned to this contractor.</p></div>` : html;
         }
 
-        function openProjectDetail(projectId) {
-            currentProjectId = projectId;
-            const p = projectsData[projectId];
-            if (p) currentContractorId = p.contractorId;
-            switchTab('project-detail');
-            buildProjectDetailView(projectId);
-        }
-
-        function goBackToContractor() {
-            if (currentContractorId) {
-                openContractorProjects(currentContractorId);
-            } else {
-                switchTab(lastMainView);
-            }
-        }
+        function openProjectDetail(projectId) { currentProjectId = projectId; const p = projectsData[projectId]; if (p) currentContractorId = p.contractorId; switchTab('project-detail'); buildProjectDetailView(projectId); }
+        function goBackToContractor() { if (currentContractorId) { openContractorProjects(currentContractorId); } else { switchTab(lastMainView); } }
 
         function buildProjectDetailView(projectId) {
             const p = projectsData[projectId];
-            if (!p) return;
-            const c = contractorsData[p.contractorId] || { name: 'Unknown Contractor' };
+            if (!p || p.isDeleted) return;
+            const c = contractorsData[p.contractorId] && !contractorsData[p.contractorId].isDeleted ? contractorsData[p.contractorId] : { name: 'Unknown Contractor' };
 
             document.getElementById('pd-customer').textContent = p.customer;
             document.getElementById('pd-contractor-name').textContent = `Contractor: ${c.name}`;
             document.getElementById('pd-area').textContent = `${p.area || 0} sq in`;
 
-            let calculatedPaid = 0;
-            const projectPayments = [];
-            Object.keys(paymentsData).forEach(payId => {
-                const pay = paymentsData[payId];
-                if (pay.projectId === projectId) {
-                    calculatedPaid += Number(pay.amount || 0);
-                    projectPayments.push({ id: payId, ...pay });
-                }
-            });
-
-            if (p.paid !== calculatedPaid) {
-                db.ref(`projects/${projectId}/paid`).set(calculatedPaid);
-            }
-
+            const calculatedPaid = paidTotals[projectId] || 0;
             const totalVal = Number(p.value || 0);
             const balance = totalVal - calculatedPaid;
 
             document.getElementById('pd-value').textContent = formatINR(totalVal);
             document.getElementById('pd-paid').textContent = formatINR(calculatedPaid);
             document.getElementById('pd-balance').textContent = formatINR(balance);
+            
+            const delBtn = document.getElementById('pd-delete-btn');
+            balance <= 0 ? delBtn.classList.remove('hidden') : delBtn.classList.add('hidden');
 
-            const container = document.getElementById('pd-payments-list');
-            container.innerHTML = '';
+            let html = '';
+            let projectPayments = [];
+            Object.keys(paymentsData).forEach(payId => { if (paymentsData[payId].projectId === projectId && !paymentsData[payId].isDeleted) projectPayments.push({ id: payId, ...paymentsData[payId] }); });
 
             projectPayments.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).forEach(pay => {
-                container.innerHTML += `
+                html += `
                     <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
                         <div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold bg-brand-50 text-brand-700 px-2 py-0.5 rounded">${pay.milestone || 'Payment'}</span>
-                                <span class="text-xs text-slate-400 font-medium">${formatDate(pay.date)}</span>
-                            </div>
+                            <div class="flex items-center gap-2"><span class="text-xs font-bold bg-brand-50 text-brand-700 px-2 py-0.5 rounded">Payment</span><span class="text-xs text-slate-400 font-medium">${formatDate(pay.date)}</span></div>
                             <p class="text-xs text-slate-500 mt-1"><i class="fas fa-credit-card mr-1 text-slate-400"></i> ${pay.mode || 'N/A'} ${pay.notes ? '• ' + pay.notes : ''}</p>
                         </div>
                         <div class="text-right flex items-center gap-3">
-                            <span class="font-black text-slate-900 text-base">${formatINR(pay.amount)}</span>
+                            <span class="font-black text-slate-900 text-base mr-2">${formatINR(pay.amount)}</span>
+                            <button onclick="openEditPayment('${pay.id}')" class="text-slate-300 hover:text-brand-500 transition p-1"><i class="fas fa-edit text-xs"></i></button>
                             <button onclick="deletePayment('${pay.id}')" class="text-slate-300 hover:text-rose-500 transition p-1"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
                     </div>`;
             });
-
-            if (projectPayments.length === 0) {
-                container.innerHTML = `<div class="py-8 text-center bg-white border border-dashed border-slate-200 rounded-xl"><p class="text-slate-400 text-sm font-medium">No payments recorded yet.</p></div>`;
-            }
+            document.getElementById('pd-payments-list').innerHTML = projectPayments.length === 0 ? `<div class="py-8 text-center bg-white border border-dashed border-slate-200 rounded-xl"><p class="text-slate-400 text-sm font-medium">No payments recorded yet.</p></div>` : html;
         }
 
         function updateDropdowns() {
             const select = document.getElementById('projContractor');
             select.innerHTML = '<option value="" disabled selected>Select from directory...</option>';
-            Object.keys(contractorsData).forEach(key => {
-                select.innerHTML += `<option value="${key}">${contractorsData[key].name}</option>`;
-            });
+            Object.keys(contractorsData).forEach(key => { if(!contractorsData[key].isDeleted) select.innerHTML += `<option value="${key}">${contractorsData[key].name}</option>`; });
         }
 
+        // MODAL LOGIC
+        function openSettingsModal() { openModal('settingsModal'); }
+        function openProjectModal() { editMode = {type: null, id: null}; openModal('projectModal'); }
+        function openContractorModal() { editMode = {type: null, id: null}; openModal('contractorModal'); }
+        function openPaymentModal() { if(!currentProjectId) return; editMode = {type: null, id: null}; document.getElementById('payProjectId').value = currentProjectId; openModal('paymentModal'); }
+
+        function openEditProject(id) { editMode = { type: 'project', id: id }; const p = projectsData[id]; document.getElementById('projDate').value = p.date || ''; document.getElementById('projContractor').value = p.contractorId; document.getElementById('projCustomer').value = p.customer; document.getElementById('projArea').value = p.area || 0; document.getElementById('projValue').value = p.value || 0; document.getElementById('projModalTitle').textContent = 'Edit Project'; openModal('projectModal'); }
+        function openEditContractor(id) { editMode = { type: 'contractor', id: id }; const c = contractorsData[id]; document.getElementById('contName').value = c.name; document.getElementById('contPhone').value = c.phone || ''; document.getElementById('contModalTitle').textContent = 'Edit Contractor'; openModal('contractorModal'); }
+        function openEditPayment(id) { editMode = { type: 'payment', id: id }; const p = paymentsData[id]; document.getElementById('payProjectId').value = p.projectId; document.getElementById('payDate').value = p.date || ''; document.getElementById('payAmount').value = p.amount || 0; document.getElementById('payMode').value = p.mode || ''; document.getElementById('payNotes').value = p.notes || ''; document.getElementById('payModalTitle').textContent = 'Edit Payment'; openModal('paymentModal'); }
+
         function openModal(modalId) {
-            setTodayStr();
-            const backdrop = document.getElementById('modal-backdrop');
-            const modal = document.getElementById(modalId);
-            backdrop.classList.remove('hidden');
-            setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
-            
-            modal.classList.remove('hidden');
-            const card = modal.firstElementChild;
-            setTimeout(() => card.classList.remove('translate-y-full'), 10);
+            setTodayStr(); const backdrop = document.getElementById('modal-backdrop'); const modal = document.getElementById(modalId);
+            backdrop.classList.remove('hidden'); setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+            modal.classList.remove('hidden'); setTimeout(() => modal.firstElementChild.classList.remove('translate-y-full'), 10);
         }
 
         function closeAllModals() {
-            const backdrop = document.getElementById('modal-backdrop');
-            backdrop.classList.add('opacity-0');
-            
+            const backdrop = document.getElementById('modal-backdrop'); backdrop.classList.add('opacity-0');
             ['projectModal', 'contractorModal', 'paymentModal', 'settingsModal'].forEach(id => {
                 const modal = document.getElementById(id);
-                if (modal && !modal.classList.contains('hidden')) {
-                    const card = modal.firstElementChild;
-                    card.classList.add('translate-y-full');
-                    setTimeout(() => modal.classList.add('hidden'), 300);
-                }
+                if (modal && !modal.classList.contains('hidden')) { modal.firstElementChild.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hidden'), 300); }
             });
-
-            setTimeout(() => backdrop.classList.add('hidden'), 300);
+            setTimeout(() => { backdrop.classList.add('hidden'); document.getElementById('projectForm').reset(); document.getElementById('contractorForm').reset(); document.getElementById('paymentForm').reset(); document.getElementById('settingsForm').reset(); document.getElementById('projModalTitle').textContent = 'Log New Project'; document.getElementById('contModalTitle').textContent = 'Add Contractor'; document.getElementById('payModalTitle').textContent = 'Record Payment'; editMode = { type: null, id: null }; }, 300);
         }
 
-        function openPaymentModalForCurrentProject() {
-            if (!currentProjectId) return;
-            document.getElementById('payProjectId').value = currentProjectId;
-            openModal('paymentModal');
-        }
-
+        // DATABASE SUBMISSIONS
         function handleProjectSubmit(e) {
             e.preventDefault();
-            const newProj = {
-                date: document.getElementById('projDate').value,
-                contractorId: document.getElementById('projContractor').value,
-                customer: document.getElementById('projCustomer').value,
-                area: Number(document.getElementById('projArea').value),
-                value: Number(document.getElementById('projValue').value),
-                paid: 0
-            };
-            db.ref('projects').push(newProj, (err) => {
-                if (!err) {
-                    document.getElementById('projectForm').reset();
-                    closeAllModals();
-                }
-            });
+            const data = { date: document.getElementById('projDate').value, contractorId: document.getElementById('projContractor').value, customer: document.getElementById('projCustomer').value, area: Number(document.getElementById('projArea').value), value: Number(document.getElementById('projValue').value), isDeleted: false };
+            if(editMode.id && editMode.type === 'project') db.ref(`projects/${editMode.id}`).update(data, (err) => { if (!err) closeAllModals(); });
+            else db.ref('projects').push(data, (err) => { if (!err) closeAllModals(); });
         }
 
         function handleContractorSubmit(e) {
             e.preventDefault();
-            const newCont = {
-                name: document.getElementById('contName').value,
-                phone: document.getElementById('contPhone').value
-            };
-            db.ref('contractors').push(newCont, (err) => {
-                if (!err) {
-                    document.getElementById('contractorForm').reset();
-                    closeAllModals();
-                }
-            });
+            const data = { name: document.getElementById('contName').value, phone: document.getElementById('contPhone').value, isDeleted: false };
+            if(editMode.id && editMode.type === 'contractor') db.ref(`contractors/${editMode.id}`).update(data, (err) => { if (!err) closeAllModals(); });
+            else db.ref('contractors').push(data, (err) => { if (!err) closeAllModals(); });
         }
 
         function handlePaymentSubmit(e) {
             e.preventDefault();
             const pId = document.getElementById('payProjectId').value;
-            const newPay = {
-                projectId: pId,
-                date: document.getElementById('payDate').value,
-                amount: Number(document.getElementById('payAmount').value),
-                milestone: document.getElementById('payMilestone').value,
-                mode: document.getElementById('payMode').value,
-                notes: document.getElementById('payNotes').value
-            };
-            db.ref('payments').push(newPay, (err) => {
-                if (!err) {
-                    document.getElementById('paymentForm').reset();
-                    closeAllModals();
-                }
-            });
+            const newAmount = Number(document.getElementById('payAmount').value);
+            
+            // Payment Limits Validator
+            let currentPaid = 0;
+            Object.keys(paymentsData).forEach(k => { if(paymentsData[k].projectId === pId && !paymentsData[k].isDeleted) { if(editMode.type === 'payment' && editMode.id === k) return; currentPaid += Number(paymentsData[k].amount || 0); } });
+            
+            const maxAllowed = Number(projectsData[pId].value || 0) - currentPaid;
+            if(newAmount > maxAllowed) { alert(`Error: Amount exceeds pending balance!\nMaximum allowed: ${formatINR(maxAllowed)}`); return; }
+
+            const data = { projectId: pId, date: document.getElementById('payDate').value, amount: newAmount, mode: document.getElementById('payMode').value, notes: document.getElementById('payNotes').value, isDeleted: false };
+            if(editMode.id && editMode.type === 'payment') db.ref(`payments/${editMode.id}`).update(data, (err) => { if (!err) closeAllModals(); });
+            else db.ref('payments').push(data, (err) => { if (!err) closeAllModals(); });
         }
 
-        function deletePayment(payId) {
-            if (confirm('Are you sure you want to delete this payment record?')) {
-                db.ref(`payments/${payId}`).remove();
-            }
-        }
+        function deletePayment(payId) { if (confirm('Are you sure you want to delete this payment record?')) db.ref(`payments/${payId}`).update({ isDeleted: true }); }
+        function deleteContractor(id) { if (confirm('Are you sure you want to delete this contractor?')) db.ref(`contractors/${id}`).update({ isDeleted: true }); }
+        function deleteProject(id) { if (confirm('Are you sure you want to permanently close and delete this completed project?')) { db.ref(`projects/${id}`).update({ isDeleted: true }); Object.keys(paymentsData).forEach(payId => { if (paymentsData[payId].projectId === id) db.ref(`payments/${payId}`).update({ isDeleted: true }); }); goBackToContractor(); } }
 
+        // EXPORTS
         function shareLedgerWhatsApp() {
-            if (!currentProjectId) return;
-            const p = projectsData[currentProjectId];
-            if (!p) return;
-            const c = contractorsData[p.contractorId] || { name: 'Unknown', phone: '' };
-
-            let paidTotal = 0;
+            if (!currentProjectId) return; const p = projectsData[currentProjectId]; if (!p) return; const c = contractorsData[p.contractorId] || { name: 'Unknown', phone: '' };
             let paymentsText = "";
-            Object.values(paymentsData).forEach(pay => {
-                if (pay.projectId === currentProjectId) {
-                    paidTotal += Number(pay.amount || 0);
-                    paymentsText += `• ${formatDate(pay.date)}: ${formatINR(pay.amount)} (${pay.milestone || 'Payment'})\n`;
-                }
-            });
-
-            const bal = Number(p.value || 0) - paidTotal;
-
-            let msg = `*URBAN CASA - Project Statement*\n\n`;
-            msg += `*Customer / Site:* ${p.customer}\n`;
-            msg += `*Contractor:* ${c.name}\n`;
-            msg += `*Area:* ${p.area || 0} sq in\n\n`;
-            msg += `*Total Labour Value:* ${formatINR(p.value)}\n`;
-            msg += `*Total Settled:* ${formatINR(paidTotal)}\n`;
-            msg += `*Pending Balance:* ${formatINR(bal)}\n\n`;
-            if (paymentsText) {
-                msg += `*Payment History:*\n${paymentsText}\n`;
-            }
-            msg += `_Generated by Urban Casa Contractor Portal_`;
-
+            Object.values(paymentsData).forEach(pay => { if (pay.projectId === currentProjectId && !pay.isDeleted) paymentsText += `• ${formatDate(pay.date)}: ${formatINR(pay.amount)}\n`; });
+            const bal = Number(p.value || 0) - (paidTotals[currentProjectId] || 0);
+            let msg = `*URBAN CASA - Project Statement*\n\n*Customer / Site:* ${p.customer}\n*Contractor:* ${c.name}\n*Area:* ${p.area || 0} sq in\n\n*Total Labour Value:* ${formatINR(p.value)}\n*Total Settled:* ${formatINR(paidTotals[currentProjectId] || 0)}\n*Pending Balance:* ${formatINR(bal)}\n\n`;
+            if (paymentsText) msg += `*Payment History:*\n${paymentsText}\n`;
+            msg += `_Generated by Urban Casa Portal_`;
             const phoneNum = c.phone ? c.phone.replace(/[^0-9]/g, '') : '';
-            const url = phoneNum ? `https://wa.me/${phoneNum}?text=${encodeURIComponent(msg)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
+            window.open(phoneNum ? `https://wa.me/${phoneNum}?text=${encodeURIComponent(msg)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function exportLedgerPDF() {
-            if (!currentProjectId) return;
-            const p = projectsData[currentProjectId];
-            if (!p) return;
-            const c = contractorsData[p.contractorId] || { name: 'N/A' };
-
-            document.getElementById('pdf-customer').textContent = p.customer;
-            document.getElementById('pdf-contractor').textContent = c.name;
-            document.getElementById('pdf-area').textContent = `${p.area || 0} sq in`;
-            document.getElementById('pdf-value').textContent = formatINR(p.value);
+            if (!currentProjectId) return; const p = projectsData[currentProjectId]; if (!p) return; const c = contractorsData[p.contractorId] || { name: 'N/A' };
+            document.getElementById('pdf-customer').textContent = p.customer; document.getElementById('pdf-contractor').textContent = c.name; document.getElementById('pdf-area').textContent = `${p.area || 0} sq in`; document.getElementById('pdf-value').textContent = formatINR(p.value);
+            let tbody = '';
+            Object.values(paymentsData).forEach(pay => { if (pay.projectId === currentProjectId && !pay.isDeleted) tbody += `<tr style="border-bottom: 1px solid #f1f5f9; font-size: 11px;"><td style="padding: 6px 0;">${formatDate(pay.date)}</td><td style="padding: 6px 0;">${pay.mode || 'N/A'}</td><td style="padding: 6px 0;">${pay.notes || '-'}</td><td style="padding: 6px 0; text-align: right; font-weight: 700;">${formatINR(pay.amount)}</td></tr>`; });
+            document.getElementById('pdf-payments-tbody').innerHTML = tbody;
+            const bal = Number(p.value || 0) - (paidTotals[currentProjectId] || 0);
+            document.getElementById('pdf-paid').textContent = formatINR(paidTotals[currentProjectId] || 0); document.getElementById('pdf-balance').textContent = formatINR(bal); document.getElementById('pdf-gen-date').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
             
-            let paidTotal = 0;
-            const tbody = document.getElementById('pdf-payments-tbody');
-            tbody.innerHTML = '';
-
-            Object.values(paymentsData).forEach(pay => {
-                if (pay.projectId === currentProjectId) {
-                    paidTotal += Number(pay.amount || 0);
-                    tbody.innerHTML += `
-                        <tr style="border-bottom: 1px solid #f1f5f9; font-size: 11px;">
-                            <td style="padding: 6px 0;">${formatDate(pay.date)}</td>
-                            <td style="padding: 6px 0;">${pay.milestone || 'Payment'}</td>
-                            <td style="padding: 6px 0;">${pay.mode || 'N/A'}</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: 700;">${formatINR(pay.amount)}</td>
-                        </tr>`;
-                }
-            });
-
-            const bal = Number(p.value || 0) - paidTotal;
-            document.getElementById('pdf-paid').textContent = formatINR(paidTotal);
-            document.getElementById('pdf-balance').textContent = formatINR(bal);
-            document.getElementById('pdf-gen-date').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-
-            const element = document.getElementById('pdf-export-container');
-            
-            // Unhide container briefly for html2pdf to measure height precisely without creating blank overflow pages
-            element.style.display = 'block';
-
-            const opt = {
-                margin:       [0.3, 0.3, 0.3, 0.3],
-                filename:     `Ledger_${p.customer.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, logging: false },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                element.style.display = 'none';
-            }).catch(() => {
-                element.style.display = 'none';
-            });
+            const element = document.getElementById('pdf-export-container'); element.style.display = 'block';
+            html2pdf().set({ margin: [0.3, 0.3, 0.3, 0.3], filename: `Ledger_${p.customer.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, logging: false }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } }).from(element).save().then(() => { element.style.display = 'none'; }).catch(() => { element.style.display = 'none'; });
         }
+        
+        // PWA SERVICE WORKER
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { const swCode = `self.addEventListener('install', (e) => e.waitUntil(self.skipWaiting())); self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim())); self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => new Response('Offline mode not fully cached yet.'))); });`; navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(err => console.log('SW Registration failed', err)); }); }
     </script>
 </body>
 </html>
